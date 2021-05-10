@@ -55,7 +55,11 @@ app.get('/urls/:shortURL', (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL]
-  res.redirect(longURL);
+  if(longURL) {
+    res.redirect(longURL);
+  } else {
+    res.redirect('/') //Maybe redirect to an error page
+  }
 });
 
 app.listen(PORT, () => {
