@@ -41,7 +41,6 @@ app.get("/urls/new", (req, res) => {
 app.post("/urls", (req, res) => {
   const short = generateRandomString();
   urlDatabase[short] = req.body.longURL
-  console.log(req.body);
   console.log("Adding url to DB...")
   console.log(urlDatabase)
   res.redirect(`/urls/${short}`)       
@@ -61,6 +60,11 @@ app.get("/u/:shortURL", (req, res) => {
     res.redirect('/') //Maybe redirect to an error page
   }
 });
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  delete urlDatabase[req.params.shortURL]
+  res.redirect('/urls')
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
