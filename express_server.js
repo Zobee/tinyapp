@@ -6,11 +6,11 @@ const PORT = 8080;
 
 app.set('view engine', "ejs");
 
+const CHARS = "0123456789AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
 function generateRandomString() {
-  let chars = "0123456789AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
   let randomStr = "";
   while (randomStr.length < 6){
-    let randChar = chars[Math.floor(Math.random() * chars.length)]
+    let randChar = CHARS[Math.floor(Math.random() * chars.length)]
     randomStr += randChar;
   }
   return randomStr;
@@ -60,6 +60,14 @@ app.get("/u/:shortURL", (req, res) => {
     res.redirect('/') //Maybe redirect to an error page
   }
 });
+
+app.post("/urls/:shortURL", (req, res) => {
+  console.log(urlDatabase)
+  urlDatabase[req.params.shortURL] = req.body.updatedLongURL
+  console.log("Updating the long URL...")
+  console.log(urlDatabase)
+  res.redirect('/urls')
+})
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[req.params.shortURL]
