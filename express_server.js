@@ -19,15 +19,15 @@ function generateRandomString() {
 }
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {longURL : "http://www.lighthouselabs.ca", userID: "123D45" },
+  "9sm5xK": {longURL : "http://www.google.com", userID: "123D45"}
 };
 
 const users = {
   "user123D45": {
     id: "123D45", 
     email: "user2@example.com", 
-    password: "dishwasher-funk"
+    password: "dish"
   }
 }
 
@@ -74,7 +74,7 @@ app.get("/urls/new", (req, res) => {
 app.get('/urls/:shortURL', (req, res) => {
   let url = req.params.shortURL
   const user = users[`user${req.cookies["user_id"]}`]
-  const templateVars = {user, shortURL: url, longURL: urlDatabase[url]};
+  const templateVars = {user, shortURL: url, longURL: urlDatabase[url].longURL};
   res.render("urls_show", templateVars);
 })
 
@@ -88,7 +88,8 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  urlDatabase[req.params.shortURL] = req.body.updatedLongURL
+  const user = users[`user${req.cookies["user_id"]}`]
+  urlDatabase[req.params.shortURL] = {longURL: req.body.updatedLongURL, userID: user.id}
   res.redirect('/urls')
 })
 
