@@ -23,6 +23,9 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {
+}
+
 app.get("/", (req, res) => {
   res.redirect("/urls");
 });
@@ -35,8 +38,6 @@ app.get('/urls', (req, res) => {
 app.post("/urls", (req, res) => {
   const short = generateRandomString();
   urlDatabase[short] = req.body.longURL
-  console.log("Adding url to DB...")
-  console.log(urlDatabase)
   res.redirect(`/urls/${short}`)       
 });
 
@@ -65,10 +66,10 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  console.log(urlDatabase)
+  //console.log(urlDatabase)
   urlDatabase[req.params.shortURL] = req.body.updatedLongURL
-  console.log("Updating the long URL...")
-  console.log(urlDatabase)
+  //console.log("Updating the long URL...")
+  //console.log(urlDatabase)
   res.redirect('/urls')
 })
 
@@ -84,6 +85,24 @@ app.post('/login', (req, res) => {
 
 app.post('/logout', (req, res) => {
   res.clearCookie("username");
+  res.redirect("/urls")
+})
+
+app.get('/register', (req, res) => {
+  res.render("urls_register")
+})
+
+app.post('/register', (req, res) => {
+  const uid = generateRandomString()
+  const newUser = {
+    id: uid,
+    email: req.body.email,
+    password: req.body.password
+  }
+  users[`user${uid}`] = newUser;
+  console.log(users)
+
+  res.cookie("user_id", uid)
   res.redirect("/urls")
 })
 
