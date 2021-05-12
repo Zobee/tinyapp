@@ -32,12 +32,12 @@ const users = {
 }
 
 const emailLookup = (email) => {
-  for (let val of Object.values(users)){
-    if (val.email === email) {
-      return false;
+  for (let user of Object.values(users)){
+    if (user.email === email) {
+      return {data : user};
     }
   }
-  return true;
+  return {data: null};
 }
 
 app.get("/", (req, res) => {
@@ -98,8 +98,21 @@ app.get('/login', (req, res) => {
 })
 
 app.post('/login', (req, res) => {
-  res.cookie("user_id", req.body.user_id);
-  res.redirect("/urls")
+  const {email, password} = req.body;
+  if(!email || !password) {
+    return res.status(400).send("Error: Email or Password must not be empty.")
+  }
+  let user = emailLookup(email)
+  if(user.data){
+    if(user.data.password === password){
+      res.cookie("user_id", user.data.id);
+      res.redirect("/urls")
+    } else {
+      res.status(403).send("Password does not match!")
+    }
+  } else {
+    res.status(403).send("Error. User does not exist")
+  }
 })
 
 app.post('/logout', (req, res) => {
@@ -116,7 +129,7 @@ app.post('/register', (req, res) => {
   if(!email || !password) {
     return res.status(400).send("Error: Email or Password must not be empty.")
   }
-  if(!emailLookup(email)){
+  if(emailLookup(email).data){
     return res.status(400).send("Error: Email already exists.");
   }
   const uid = generateRandomString()
@@ -133,5 +146,5 @@ app.post('/register', (req, res) => {
 })
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`App listening on port ${PORT}!`);
 });
