@@ -31,6 +31,15 @@ const users = {
   }
 }
 
+const emailLookup = (email) => {
+  for (let val of Object.values(users)){
+    if (val.email === email) {
+      return false;
+    }
+  }
+  return true;
+}
+
 app.get("/", (req, res) => {
   res.redirect("/urls");
 });
@@ -62,7 +71,7 @@ app.get('/urls/:shortURL', (req, res) => {
   let url = req.params.shortURL
   const user = users[`user${req.cookies["user_id"]}`]
   const templateVars = {user, shortURL: url, longURL: urlDatabase[url]};
-  res.render("urls_show.ejs", templateVars);
+  res.render("urls_show", templateVars);
 })
 
 app.get("/u/:shortURL", (req, res) => {
@@ -84,6 +93,10 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect('/urls')
 })
 
+app.get('/login', (req, res) => {
+  res.render("urls_login")
+})
+
 app.post('/login', (req, res) => {
   res.cookie("user_id", req.body.user_id);
   res.redirect("/urls")
@@ -99,11 +112,18 @@ app.get('/register', (req, res) => {
 })
 
 app.post('/register', (req, res) => {
+  const {email, password} = req.body
+  if(!email || !password) {
+    return res.status(400).send("Error: Email or Password must not be empty.")
+  }
+  if(!emailLookup(email)){
+    return res.status(400).send("Error: Email already exists.");
+  }
   const uid = generateRandomString()
   const newUser = {
     id: uid,
-    email: req.body.email,
-    password: req.body.password
+    email,
+    password
   }
   users[`user${uid}`] = newUser;
   console.log(users)
