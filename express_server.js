@@ -24,6 +24,11 @@ const urlDatabase = {
 };
 
 const users = {
+  "user123D45": {
+    id: "123D45", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
 }
 
 app.get("/", (req, res) => {
@@ -31,7 +36,8 @@ app.get("/", (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
-  const templateVars = {username: req.cookies["username"], urls: urlDatabase };
+  const user = users[`user${req.cookies["user_id"]}`]
+  const templateVars = {user, urls: urlDatabase };
   res.render("urls_index", templateVars)
 })
 
@@ -47,12 +53,15 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const user = users[`user${req.cookies["user_id"]}`]
+  const templateVars = {user, urls: urlDatabase };
+  res.render("urls_new", templateVars);
 });
 
 app.get('/urls/:shortURL', (req, res) => {
   let url = req.params.shortURL
-  const templateVars = {username: req.cookies["username"], shortURL: url, longURL: urlDatabase[url]};
+  const user = users[`user${req.cookies["user_id"]}`]
+  const templateVars = {user, shortURL: url, longURL: urlDatabase[url]};
   res.render("urls_show.ejs", templateVars);
 })
 
@@ -66,10 +75,7 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  //console.log(urlDatabase)
   urlDatabase[req.params.shortURL] = req.body.updatedLongURL
-  //console.log("Updating the long URL...")
-  //console.log(urlDatabase)
   res.redirect('/urls')
 })
 
@@ -79,12 +85,12 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 })
 
 app.post('/login', (req, res) => {
-  res.cookie("username", req.body.username);
+  res.cookie("user_id", req.body.user_id);
   res.redirect("/urls")
 })
 
 app.post('/logout', (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls")
 })
 
