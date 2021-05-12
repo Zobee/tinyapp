@@ -64,7 +64,11 @@ app.get("/urls.json", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const user = users[`user${req.cookies["user_id"]}`]
   const templateVars = {user, urls: urlDatabase };
-  res.render("urls_new", templateVars);
+  if(user) {
+    res.render("urls_new", templateVars);
+  } else {
+    res.redirect("/login")
+  }
 });
 
 app.get('/urls/:shortURL', (req, res) => {
