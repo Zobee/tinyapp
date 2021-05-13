@@ -2,50 +2,22 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session')
+const {generateRandomString, emailLookup, urlsForUser} = require('./helpers')
 const bcrypt = require('bcrypt');
 app.use(bodyParser.urlencoded({extended: true}));
 const PORT = 8080;
 
 app.set('view engine', "ejs");
+
 app.use(cookieSession({
   name: 'session',
-  keys: ['SomeKey']
+  keys: ['keys1', "keys2"]
 }))
-
-const CHARS = "0123456789AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
-function generateRandomString() {
-  let randomStr = "";
-  while (randomStr.length < 6){
-    let randChar = CHARS[Math.floor(Math.random() * CHARS.length)]
-    randomStr += randChar;
-  }
-  return randomStr;
-}
 
 const urlDatabase = {
 };
 
 const users = {
-}
-
-const emailLookup = (email) => {
-  for (let user of Object.values(users)){
-    if (user.email === email) {
-      return {data : user};
-    }
-  }
-  return {data: null};
-}
-
-const urlsForUser = (id) => {
-  const urls = {};
-  for (let key in urlDatabase){
-    let userUrl = urlDatabase[key].userID;
-    if(id === userUrl) {
-      urls[key] = urlDatabase[key]
-    }
-  }
-  return urls;
 }
 
 app.get("/", (req, res) => {
@@ -55,7 +27,7 @@ app.get("/", (req, res) => {
 app.get('/urls', (req, res) => {
   const user = users[`user${req.session["user_id"]}`]
   let urls = {}
-  if(user) {urls = urlsForUser(user.id)}
+  if(user) {urls = urlsForUser(user.id, urlDatabase)}
   const templateVars = {user, urls};
   res.render("urls_index", templateVars)
 })
@@ -86,7 +58,7 @@ app.get('/urls/:shortURL', (req, res) => {
   const user = users[`user${req.session["user_id"]}`]
   if(user){
     let shortURL = req.params.shortURL
-    if(urlsForUser(user.id)[shortURL]){
+    if(urlsForUser(user.id, urlDatabase)[shortURL]){
       let longURL = urlDatabase[shortURL].longURL
       const templateVars = {user, shortURL, longURL};
       res.render("urls_show", templateVars);
@@ -107,28 +79,29 @@ app.get("/u/:shortURL", (req, res) => {
   }
 });
 
+//Causes header error
 app.post("/urls/:shortURL", (req, res) => {
   const user = users[`user${req.session["user_id"]}`]
   if(user){
     let shortURL = req.params.shortURL
-    if(urlsForUser(user.id)[shortURL]){
+    if(urlsForUser(user.id, urlDatabase)[shortURL]){
       urlDatabase[shortURL] = {longURL: req.body.updatedLongURL, userID: user.id}
       console.log(urlDatabase)
-      res.redirect('/urls')
+      return res.redirect('/urls')
     }
   }
   res.status(403).send("Forbidden: Only users may edit their own urls.")
 })
 
-
+//Causes header error
 app.post("/urls/:shortURL/delete", (req, res) => {
   const user = users[`user${req.session["user_id"]}`]
   if(user){
     let shortURL = req.params.shortURL
-    if(urlsForUser(user.id)[shortURL]){
+    if(urlsForUser(user.id, urlDatabase)[shortURL]){
       delete urlDatabase[req.params.shortURL]
-      res.redirect('/urls');
-    }
+      return res.redirect('/urls');
+    } 
   }
   res.status(403).send("Forbidden: Only users may delete their own urls.")
 })
@@ -142,7 +115,7 @@ app.post('/login', (req, res) => {
   if(!email || !password) {
     return res.status(400).send("Error: Email or Password must not be empty.")
   }
-  let user = emailLookup(email)
+  let user = emailLookup(email, users)
   if(user.data){
     if(bcrypt.compareSync(password, user.data.password)){
       req.session.user_id = user.data.id;
@@ -169,7 +142,7 @@ app.post('/register', (req, res) => {
   if(!email || !password) {
     return res.status(400).send("Error: Email or Password must not be empty.")
   }
-  if(emailLookup(email).data){
+  if(emailLookup(email, users).data){
     return res.status(400).send("Error: Email already exists.");
   }
   const uid = generateRandomString()
