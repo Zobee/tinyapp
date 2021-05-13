@@ -135,6 +135,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 })
 
 app.get('/login', (req, res) => {
+  if (getUser(req, users)) {return res.redirect('/urls') }
   res.render("urls_login")
 })
 
@@ -165,13 +166,14 @@ app.post('/logout', (req, res) => {
 })
 
 app.get('/register', (req, res) => {
+  if (getUser(req, users)) {return res.redirect('/urls') }
   res.render("urls_register")
 })
 
 app.post('/register', (req, res) => {
   const {email, password} = req.body
   if(!email || !password) {
-    const templateVars = {user : null, error : {status: 400, msg: "Email or Password must not be empty"}}
+    const templateVars = {user : null, error : {status: 400, msg: "Email and Password fields must not be empty"}}
     return res.status(400).render("urls_error", templateVars)
   }
   if(emailLookup(email, users)){
