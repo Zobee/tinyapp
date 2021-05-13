@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
-const e = require("express");
+const bcrypt = require('bcrypt');
 app.use(bodyParser.urlencoded({extended: true}));
 const PORT = 8080;
 
@@ -20,16 +20,16 @@ function generateRandomString() {
 }
 
 const urlDatabase = {
-  "b2xVn2": {longURL : "http://www.lighthouselabs.ca", userID: "123D45" },
-  "9sm5xK": {longURL : "http://www.google.com", userID: "123D45"}
+  // "b2xVn2": {longURL : "http://www.lighthouselabs.ca", userID: "123D45" },
+  // "9sm5xK": {longURL : "http://www.google.com", userID: "123D45"}
 };
 
 const users = {
-  "user123D45": {
-    id: "123D45", 
-    email: "user2@example.com", 
-    password: "dish"
-  }
+  // "user123D45": {
+  //   id: "123D45", 
+  //   email: "user2@example.com", 
+  //   password: "dish"
+  // }
 }
 
 const emailLookup = (email) => {
@@ -148,7 +148,7 @@ app.post('/login', (req, res) => {
   }
   let user = emailLookup(email)
   if(user.data){
-    if(user.data.password === password){
+    if(bcrypt.compareSync(password, user.data.password)){
       res.cookie("user_id", user.data.id);
       res.redirect("/urls")
     } else {
@@ -180,7 +180,7 @@ app.post('/register', (req, res) => {
   const newUser = {
     id: uid,
     email,
-    password
+    password: bcrypt.hashSync(password, 10)
   }
   users[`user${uid}`] = newUser;
   console.log(users)
