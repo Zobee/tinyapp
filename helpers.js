@@ -14,7 +14,6 @@ const emailLookup = (email, db) => {
       return user;
     }
   }
-  return null;
 };
 
 const urlsForUser = (id, db) => {

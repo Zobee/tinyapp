@@ -19,6 +19,11 @@ describe('emailLookup', function() {
     const user = emailLookup("user@example.com", testUsers)
     const expectedOutput = "userRandomID";
     
-    assert.equal(user.data.id, expectedOutput)
+    assert.equal(user.id, expectedOutput)
   });
+
+  it("should return null if the email does not exist in the db", () => {
+    const user = emailLookup("fake@notreal.com", testUsers)
+    assert.isUndefined(user)
+  })
 });
