@@ -43,9 +43,13 @@ app.get('/urls', (req, res) => {
 
 app.post("/urls", (req, res) => {
   const user = users[`user${req.session["user_id"]}`]
-  const short = generateRandomString();
-  urlDatabase[short] = {longURL: req.body.longURL, userID: user.id};
-  res.redirect(`/urls/${short}`)       
+  if(user){
+    const short = generateRandomString();
+    urlDatabase[short] = {longURL: req.body.longURL, userID: user.id};
+    res.redirect(`/urls/${short}`)     
+  } else {
+    res.status(404).send("Error: Please log in to add urls.")
+  }
 });
 
 
@@ -132,13 +136,13 @@ app.post('/login', (req, res) => {
       res.status(403).send("Password does not match!")
     }
   } else {
-    res.status(403).send("Error. User does not exist")
+    res.status(404).send("Error. User does not exist")
   }
 })
 
 app.post('/logout', (req, res) => {
   req.session = null
-  res.redirect("/")
+  res.redirect("/urls")
 })
 
 app.get('/register', (req, res) => {
