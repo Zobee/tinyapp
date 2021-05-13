@@ -79,7 +79,6 @@ app.get("/u/:shortURL", (req, res) => {
   }
 });
 
-//Causes header error
 app.post("/urls/:shortURL", (req, res) => {
   const user = users[`user${req.session["user_id"]}`]
   if(user){
@@ -90,10 +89,9 @@ app.post("/urls/:shortURL", (req, res) => {
       return res.redirect('/urls')
     }
   }
-  res.status(403).send("Forbidden: Only users may edit their own urls.")
+  res.status(403).send("Forbidden: Users may only edit their own urls.")
 })
 
-//Causes header error
 app.post("/urls/:shortURL/delete", (req, res) => {
   const user = users[`user${req.session["user_id"]}`]
   if(user){
@@ -103,7 +101,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
       return res.redirect('/urls');
     } 
   }
-  res.status(403).send("Forbidden: Only users may delete their own urls.")
+  res.status(403).send("Forbidden: Users may only delete their own urls.")
 })
 
 app.get('/login', (req, res) => {
@@ -116,9 +114,9 @@ app.post('/login', (req, res) => {
     return res.status(400).send("Error: Email or Password must not be empty.")
   }
   let user = emailLookup(email, users)
-  if(user.data){
-    if(bcrypt.compareSync(password, user.data.password)){
-      req.session.user_id = user.data.id;
+  if(user){
+    if(bcrypt.compareSync(password, user.password)){
+      req.session.user_id = user.id;
       res.redirect("/urls")
     } else {
       res.status(403).send("Password does not match!")
@@ -142,7 +140,7 @@ app.post('/register', (req, res) => {
   if(!email || !password) {
     return res.status(400).send("Error: Email or Password must not be empty.")
   }
-  if(emailLookup(email, users).data){
+  if(emailLookup(email, users)){
     return res.status(400).send("Error: Email already exists.");
   }
   const uid = generateRandomString()

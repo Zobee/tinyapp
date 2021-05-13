@@ -11,10 +11,10 @@ function generateRandomString() {
 const emailLookup = (email, db) => {
   for (let user of Object.values(db)) {
     if (user.email === email) {
-      return {data : user};
+      return user;
     }
   }
-  return {data: null};
+  return null;
 };
 
 const urlsForUser = (id, db) => {
