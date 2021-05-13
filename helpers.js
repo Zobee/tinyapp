@@ -27,4 +27,6 @@ const urlsForUser = (id, db) => {
   return urls;
 };
 
-module.exports = {generateRandomString, emailLookup, urlsForUser};
+const getUser = (req, users) => users[`user${req.session["user_id"]}`];
+
+module.exports = {generateRandomString, emailLookup, urlsForUser, getUser};

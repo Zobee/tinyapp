@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session')
-const {generateRandomString, emailLookup, urlsForUser} = require('./helpers')
+const {generateRandomString, emailLookup, urlsForUser, getUser} = require('./helpers')
 const bcrypt = require('bcrypt');
 app.use(bodyParser.urlencoded({extended: true}));
 const PORT = 8080;
@@ -14,16 +14,14 @@ app.use(cookieSession({
   keys: ['keys1', "keys2"]
 }))
 
-const getUser = req => users[`user${req.session["user_id"]}`]
-
 const urlDatabase = {
 };
 
 const users = {
-}
+};
 
 app.get("/", (req, res) => {
-  const user = getUser(req)
+  const user = getUser(req, users)
   if(user){
     res.redirect("/urls");
   } else {
@@ -32,7 +30,7 @@ app.get("/", (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
-  const user = getUser(req)
+  const user = getUser(req, users)
   const templateVars = {user}
   if(user) {
     templateVars.urls = urlsForUser(user.id, urlDatabase);
@@ -44,7 +42,7 @@ app.get('/urls', (req, res) => {
 })
 
 app.post("/urls", (req, res) => {
-  const user = getUser(req)
+  const user = getUser(req, users)
   if(user){
     const short = generateRandomString();
     let longURL = req.body.longURL
@@ -65,7 +63,7 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const user = getUser(req)
+  const user = getUser(req, users)
   const templateVars = {user, urls: urlDatabase };
   if(user) {
     res.render("urls_new", templateVars);
@@ -75,10 +73,11 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get('/urls/:shortURL', (req, res) => {
-  const user = getUser(req)
+  const user = getUser(req, users)
   let {shortURL} = req.params
+  const templateVars = {user}
   if(!urlDatabase[shortURL]) {
-    const templateVars = {user, error: {status : 400, msg: "Short URL does not exist"}}
+    templateVars.error = {status : 400, msg: "Short URL does not exist"}
     return res.status(400).render("urls_error", templateVars)
   }
   if(user){
@@ -106,7 +105,7 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  const user = getUser(req)
+  const user = getUser(req, users)
   if(user){
     let shortURL = req.params.shortURL
     let longURL = req.body.longURL
@@ -123,7 +122,7 @@ app.post("/urls/:shortURL", (req, res) => {
 })
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const user = getUser(req)
+  const user = getUser(req, users)
   if(user){
     let shortURL = req.params.shortURL
     if(urlsForUser(user.id, urlDatabase)[shortURL]){
