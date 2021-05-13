@@ -1,8 +1,8 @@
 const CHARS = "0123456789AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
-function generateRandomString() {
+const generateRandomString = () => {
   let randomStr = "";
   while (randomStr.length < 6) {
-    let randChar = CHARS[Math.floor(Math.random() * CHARS.length)]
+    let randChar = CHARS[Math.floor(Math.random() * CHARS.length)];
     randomStr += randChar;
   }
   return randomStr;
