@@ -1,7 +1,8 @@
 const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser');
+const e = require("express");
 app.use(bodyParser.urlencoded({extended: true}));
 const PORT = 8080;
 
@@ -40,19 +41,33 @@ const emailLookup = (email) => {
   return {data: null};
 }
 
+const urlsForUser = (id) => {
+  const urls = {};
+  for (let key in urlDatabase){
+    let userUrl = urlDatabase[key].userID;
+    if(id === userUrl) {
+      urls[key] = urlDatabase[key]
+    }
+  }
+  return urls;
+}
+
 app.get("/", (req, res) => {
   res.redirect("/urls");
 });
 
 app.get('/urls', (req, res) => {
   const user = users[`user${req.cookies["user_id"]}`]
-  const templateVars = {user, urls: urlDatabase };
+  let urls = {}
+  if(user) {urls = urlsForUser(user.id)}
+  const templateVars = {user, urls};
   res.render("urls_index", templateVars)
 })
 
 app.post("/urls", (req, res) => {
+  const user = users[`user${req.cookies["user_id"]}`]
   const short = generateRandomString();
-  urlDatabase[short] = req.body.longURL
+  urlDatabase[short] = {longURL: req.body.longURL, userID: user.id};
   res.redirect(`/urls/${short}`)       
 });
 
@@ -72,14 +87,23 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get('/urls/:shortURL', (req, res) => {
-  let url = req.params.shortURL
   const user = users[`user${req.cookies["user_id"]}`]
-  const templateVars = {user, shortURL: url, longURL: urlDatabase[url].longURL};
-  res.render("urls_show", templateVars);
+  if(user){
+    let shortURL = req.params.shortURL
+    if(urlsForUser(user.id)[shortURL]){
+      let longURL = urlDatabase[shortURL].longURL
+      const templateVars = {user, shortURL, longURL};
+      res.render("urls_show", templateVars);
+    } else {
+      res.status(403).send("Forbidden: This isn't your URL")
+    }
+  } else {
+    res.redirect('/')
+  }
 })
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]
+  const {longURL} = urlDatabase[req.params.shortURL]
   if(longURL) {
     res.redirect(longURL);
   } else {
@@ -89,13 +113,28 @@ app.get("/u/:shortURL", (req, res) => {
 
 app.post("/urls/:shortURL", (req, res) => {
   const user = users[`user${req.cookies["user_id"]}`]
-  urlDatabase[req.params.shortURL] = {longURL: req.body.updatedLongURL, userID: user.id}
-  res.redirect('/urls')
+  if(user){
+    let shortURL = req.params.shortURL
+    if(urlsForUser(user.id)[shortURL]){
+      urlDatabase[shortURL] = {longURL: req.body.updatedLongURL, userID: user.id}
+      console.log(urlDatabase)
+      res.redirect('/urls')
+    }
+  }
+  res.status(403).send("Forbidden: Only users may edit their own urls.")
 })
 
+
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL]
-  res.redirect('/urls')
+  const user = users[`user${req.cookies["user_id"]}`]
+  if(user){
+    let shortURL = req.params.shortURL
+    if(urlsForUser(user.id)[shortURL]){
+      delete urlDatabase[req.params.shortURL]
+      res.redirect('/urls');
+    }
+  }
+  res.status(403).send("Forbidden: Only users may delete their own urls.")
 })
 
 app.get('/login', (req, res) => {
