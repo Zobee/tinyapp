@@ -21,15 +21,24 @@ const users = {
 }
 
 app.get("/", (req, res) => {
-  res.redirect("/urls");
+  const user = users[`user${req.session["user_id"]}`]
+  if(user){
+    res.redirect("/urls");
+  } else {
+    res.redirect('/login')
+  }
 });
 
 app.get('/urls', (req, res) => {
   const user = users[`user${req.session["user_id"]}`]
   let urls = {}
-  if(user) {urls = urlsForUser(user.id, urlDatabase)}
-  const templateVars = {user, urls};
-  res.render("urls_index", templateVars)
+  if(user) {
+    urls = urlsForUser(user.id, urlDatabase)
+    const templateVars = {user, urls};
+    res.render("urls_index", templateVars)
+  } else {
+    res.status(403).send("Error: You must be logged in to view URLs")
+  }
 })
 
 app.post("/urls", (req, res) => {
@@ -56,8 +65,9 @@ app.get("/urls/new", (req, res) => {
 
 app.get('/urls/:shortURL', (req, res) => {
   const user = users[`user${req.session["user_id"]}`]
+  let {shortURL} = req.params
+  if(!urlDatabase[shortURL]) {return res.status(400).send("Error. Short URL does not exist.")}
   if(user){
-    let shortURL = req.params.shortURL
     if(urlsForUser(user.id, urlDatabase)[shortURL]){
       let longURL = urlDatabase[shortURL].longURL
       const templateVars = {user, shortURL, longURL};
@@ -66,16 +76,16 @@ app.get('/urls/:shortURL', (req, res) => {
       res.status(403).send("Forbidden: This isn't your URL")
     }
   } else {
-    res.redirect('/')
+    res.status(403).send("Forbidden: You must be logged in to update URLs")
   }
 })
 
 app.get("/u/:shortURL", (req, res) => {
-  const {longURL} = urlDatabase[req.params.shortURL]
-  if(longURL) {
-    res.redirect(longURL);
+  const urlObj = urlDatabase[req.params.shortURL]
+  if(urlObj) {
+    res.redirect(urlObj.longURL);
   } else {
-    res.redirect('/') //Maybe redirect to an error page
+    res.status(404).send("Error: Short URL does not exist")
   }
 });
 
@@ -128,7 +138,7 @@ app.post('/login', (req, res) => {
 
 app.post('/logout', (req, res) => {
   req.session = null
-  res.redirect("/urls")
+  res.redirect("/")
 })
 
 app.get('/register', (req, res) => {
