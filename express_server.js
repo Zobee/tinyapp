@@ -149,11 +149,11 @@ app.post('/login', (req, res) => {
       req.session.user_id = user.id;
       res.redirect("/urls");
     } else {
-      const templateVars = {user, error : {status: 403, msg: "Password does not match!"}};
+      const templateVars = {user, error : {status: 403, msg: "Email or password invalid"}};
       res.status(403).render("urls_error", templateVars);
     }
   } else {
-    const templateVars = {user, error : {status: 404, msg: "User does not exist"}};
+    const templateVars = {user, error : {status: 404, msg: "Email or password invalid"}};
     res.status(404).render("urls_error", templateVars);
   }
 });
