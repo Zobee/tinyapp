@@ -36,7 +36,7 @@ app.get('/urls', (req, res) => {
     templateVars.urls = urlsForUser(user.id, urlDatabase);
     res.render("urls_index", templateVars);
   } else {
-    templateVars.error = {status: 403, msg: "Please log in to access URLs"};
+    templateVars.error = {status: 403, msg: "Please log in to access your URLs"};
     res.status(404).render("urls_error", templateVars);
   }
 });
@@ -105,10 +105,8 @@ app.get("/u/:shortURL", (req, res) => {
 app.post("/urls/:shortURL", (req, res) => {
   const user = getUserFromSession(req.session, users);
   if (user) {
-    let {shortURL, longURL} = req.params;
-    if (longURL.slice(0,7) !== "http://") {
-      longURL = `http://` + longURL;
-    }
+    let {shortURL} = req.params;
+    let {longURL} = req.body;
     if (urlsForUser(user.id, urlDatabase)[shortURL]) {
       urlDatabase[shortURL] = {longURL, userID: user.id};
       return res.redirect('/urls');
