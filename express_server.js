@@ -45,10 +45,7 @@ app.post("/urls", (req, res) => {
   const user = getUserFromSession(req.session, users);
   if (user) {
     const shortID = generateRandomString();
-    let longURL = req.body.longURL;
-    if (longURL.slice(0,7) !== "http://") {
-      longURL = "http://" + longURL;
-    }
+    let {longURL} = req.body;
     urlDatabase[shortID] = {longURL, userID: user.id};
     res.redirect(`/urls/${shortID}`);
   } else {
