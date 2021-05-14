@@ -1,14 +1,14 @@
 const express = require("express");
-const app = express();
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
-const {generateRandomString, emailLookup, urlsForUser, getUser} = require('./helpers');
+const {generateRandomString, emailLookup, urlsForUser, getUserFromSession} = require('./helpers');
 const bcrypt = require('bcrypt');
-app.use(bodyParser.urlencoded({extended: true}));
 const PORT = 8080;
 
-app.set('view engine', "ejs");
+const app = express();
 
+app.set('view engine', "ejs");
+app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   name: 'session',
   keys: ['keys1', "keys2"]
@@ -21,7 +21,7 @@ const users = {
 };
 
 app.get("/", (req, res) => {
-  const user = getUser(req, users);
+  const user = getUserFromSession(req.session, users);
   if (user) {
     res.redirect("/urls");
   } else {
@@ -30,7 +30,7 @@ app.get("/", (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
-  const user = getUser(req, users);
+  const user = getUserFromSession(req.session, users);
   const templateVars = {user};
   if (user) {
     templateVars.urls = urlsForUser(user.id, urlDatabase);
@@ -42,28 +42,27 @@ app.get('/urls', (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const user = getUser(req, users);
+  const user = getUserFromSession(req.session, users);
   if (user) {
-    const short = generateRandomString();
+    const shortID = generateRandomString();
     let longURL = req.body.longURL;
     if (longURL.slice(0,7) !== "http://") {
       longURL = "http://" + longURL;
     }
-    urlDatabase[short] = {longURL, userID: user.id};
-    res.redirect(`/urls/${short}`);
+    urlDatabase[shortID] = {longURL, userID: user.id};
+    res.redirect(`/urls/${shortID}`);
   } else {
     const templateVars = {user, error: {status: 403, msg: "Please log in to add urls"}};
     res.status(403).render("urls_error", templateVars);
   }
 });
 
-
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
 app.get("/urls/new", (req, res) => {
-  const user = getUser(req, users);
+  const user = getUserFromSession(req.session, users);
   const templateVars = {user, urls: urlDatabase };
   if (user) {
     res.render("urls_new", templateVars);
@@ -73,13 +72,15 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get('/urls/:shortURL', (req, res) => {
-  const user = getUser(req, users);
+  const user = getUserFromSession(req.session, users);
   let {shortURL} = req.params;
   const templateVars = {user};
+
   if (!urlDatabase[shortURL]) {
     templateVars.error = {status : 400, msg: "Short URL does not exist"};
     return res.status(400).render("urls_error", templateVars);
   }
+
   if (user) {
     if (urlsForUser(user.id, urlDatabase)[shortURL]) {
       let longURL = urlDatabase[shortURL].longURL;
@@ -105,10 +106,9 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  const user = getUser(req, users);
+  const user = getUserFromSession(req.session, users);
   if (user) {
-    let shortURL = req.params.shortURL;
-    let longURL = req.body.longURL;
+    let {shortURL, longURL} = req.params;
     if (longURL.slice(0,7) !== "http://") {
       longURL = `http://` + longURL;
     }
@@ -122,7 +122,7 @@ app.post("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const user = getUser(req, users);
+  const user = getUserFromSession(req.session, users);
   if (user) {
     let shortURL = req.params.shortURL;
     if (urlsForUser(user.id, urlDatabase)[shortURL]) {
@@ -134,8 +134,9 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.status(403).render("urls_error", templateVars);
 });
 
+//Login and Registration Routes
 app.get('/login', (req, res) => {
-  if (getUser(req, users)) {
+  if (getUserFromSession(req.session, users)) {
     return res.redirect('/urls');
   }
   res.render("urls_login");
@@ -168,7 +169,7 @@ app.post('/logout', (req, res) => {
 });
 
 app.get('/register', (req, res) => {
-  if (getUser(req, users)) {
+  if (getUserFromSession(req.session, users)) {
     return res.redirect('/urls');
   }
   res.render("urls_register");
@@ -199,5 +200,5 @@ app.post('/register', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`App listening on port ${PORT}!`);
+  console.log(`TinyApp listening on port ${PORT}!`);
 });
